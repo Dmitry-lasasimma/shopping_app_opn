@@ -9,6 +9,7 @@ class ShoppingApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Shopping App',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(primarySwatch: Colors.blue),
       home: ProductListPage(),
     );
@@ -70,10 +71,23 @@ class ProductListPage extends StatelessWidget {
                             builder: (context) => PaymentPage(
                               productName: product['name'],
                               productPrice: product['price'],
+                              productImage: product['image'], // Pass image
                             ),
                           ),
                         );
                       },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color.fromARGB(
+                            255, 241, 241, 241), // Set text color to white
+                        foregroundColor:
+                            const Color.fromARGB(255, 56, 159, 255),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(
+                              30), // Optional rounded corners
+                        ),
+                        padding: EdgeInsets.symmetric(
+                            horizontal: 20, vertical: 12), // Adjust padding
+                      ),
                       child: Text('Buy'),
                     ),
                   ),
@@ -90,8 +104,13 @@ class ProductListPage extends StatelessWidget {
 class PaymentPage extends StatefulWidget {
   final String productName;
   final double productPrice;
+  final String productImage; // Add product image
 
-  PaymentPage({required this.productName, required this.productPrice});
+  PaymentPage({
+    required this.productName,
+    required this.productPrice,
+    required this.productImage,
+  });
 
   @override
   _PaymentPageState createState() => _PaymentPageState();
@@ -107,12 +126,46 @@ class _PaymentPageState extends State<PaymentPage> {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Top product details
+          // Product details with image
           Padding(
             padding: const EdgeInsets.all(16.0),
-            child: Text(
-              'Product: ${widget.productName}\nPrice: \$${widget.productPrice}',
-              style: TextStyle(fontSize: 18),
+            child: Row(
+              children: [
+                // Display product image
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8.0),
+                  child: Image.network(
+                    widget.productImage,
+                    width: 100,
+                    height: 100,
+                    fit: BoxFit.cover,
+                  ),
+                ),
+                SizedBox(width: 16),
+                // Product name and price
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        widget.productName,
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      SizedBox(height: 8),
+                      Text(
+                        'Price: \$${widget.productPrice}',
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Colors.grey[700],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
           Divider(),
@@ -125,7 +178,7 @@ class _PaymentPageState extends State<PaymentPage> {
                   title: 'พร้อมเพย์ (PromptPay)',
                   subtitle: 'No Fees',
                   icon: Image.asset(
-                    'assets/images/promptpay.png', // Replace with your PromptPay asset
+                    'assets/images/promptpay.png', // Replace with PromptPay asset
                     width: 40,
                     height: 40,
                   ),
@@ -136,25 +189,30 @@ class _PaymentPageState extends State<PaymentPage> {
                     });
                   },
                 ),
-                // _buildPaymentOptionCard(
-                //   title: 'Pay with Points',
-                //   subtitle: '84,600',
-                //   icon: Icon(Icons.flash_on, color: Colors.orange, size: 40),
-                //   isSelected: selectedPaymentMethod == 'points',
-                //   onTap: () {
-                //     setState(() {
-                //       selectedPaymentMethod = 'points';
-                //     });
-                //   },
-                // ),
                 _buildPaymentOptionCard(
                   title: 'Credit card / Debit',
                   subtitle: 'No Fees',
                   icon: Image.asset(
-                    'assets/icons/group_cradit_cardpng.png', // Replace with your Credit card asset
+                    'assets/images/card_debit.png', // Replace with PromptPay asset
                     width: 40,
                     height: 40,
                   ),
+                  // icon: Row(
+                  //   mainAxisSize: MainAxisSize.min,
+                  //   children: [
+                  //     Image.asset(
+                  //       'assets/icons/visa.png', // Replace with Visa asset
+                  //       width: 40,
+                  //       height: 40,
+                  //     ),
+                  //     SizedBox(width: 8),
+                  //     Image.asset(
+                  //       'assets/icons/mastercard.png', // Replace with Mastercard asset
+                  //       width: 40,
+                  //       height: 40,
+                  //     ),
+                  //   ],
+                  // ),
                   isSelected: selectedPaymentMethod == 'card',
                   onTap: () {
                     setState(() {
@@ -183,18 +241,29 @@ class _PaymentPageState extends State<PaymentPage> {
                           builder: (context) => ReceiptPage(
                             productName: widget.productName,
                             productPrice: widget.productPrice,
+                            productImage: widget.productImage, // Add this line
                             paymentMethod: selectedPaymentMethod!,
                           ),
                         ),
                       );
                     },
-              child: Text('Proceed to Pay'),
               style: ElevatedButton.styleFrom(
-                minimumSize: Size(double.infinity, 50),
-                textStyle: TextStyle(fontSize: 18),
+                backgroundColor: const Color.fromARGB(255, 40, 155, 248),
+                foregroundColor: Colors.white, // Set text color to white
+                minimumSize:
+                    Size(double.infinity, 50), // Make the button full-width
+                textStyle:
+                    TextStyle(fontSize: 18), // Set font size for the text
+                shape: RoundedRectangleBorder(
+                  borderRadius:
+                      BorderRadius.circular(30), // Optional rounded corners
+                ),
               ),
+              child: Text('Proceed to Pay'),
             ),
           ),
+
+          SizedBox(height: 20),
         ],
       ),
     );
@@ -264,10 +333,8 @@ class AddCardPage extends StatelessWidget {
       appBar: AppBar(
         title: Text('Saved Payment Methods'),
         actions: [
-          // "Add Card" button in the top-right corner
           TextButton(
             onPressed: () {
-              // Add your card adding logic here
               Navigator.push(
                 context,
                 MaterialPageRoute(builder: (context) => CardFormPage()),
@@ -284,16 +351,14 @@ class AddCardPage extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Placeholder image
             Image.asset(
               'assets/images/no_data.png', // Replace with your asset
               width: 150,
               height: 150,
             ),
             SizedBox(height: 16),
-            // Placeholder text
             Text(
-              'ขณะนี้คุณยังไม่มีข้อมูล...',
+              'You currently have no information...',
               style: TextStyle(
                 fontSize: 16,
                 color: Colors.grey[600],
@@ -315,33 +380,51 @@ class CardFormPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Add Card')),
+      appBar: AppBar(
+        title: Text('Add Card'),
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Cardholder Name
             TextField(
               controller: nameController,
               decoration: InputDecoration(
                 labelText: 'Cardholder Name',
-                hintText: 'Enter Cardholder Name',
+                hintText: 'Cardholder Name',
                 border: OutlineInputBorder(),
               ),
             ),
             SizedBox(height: 16),
+
+            // Card Number with Visa/Mastercard icons
             TextField(
               controller: cardNumberController,
               decoration: InputDecoration(
                 labelText: 'Card Number',
-                hintText: 'Enter Card Number',
+                hintText: 'Card Number',
                 border: OutlineInputBorder(),
+                suffixIcon: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Image.asset(
+                      'assets/images/card_debit.png', // Replace with PromptPay asset
+                      width: 40,
+                      height: 40,
+                    ),
+                  ],
+                ),
               ),
               keyboardType: TextInputType.number,
             ),
             SizedBox(height: 16),
+
+            // Expiry Date and CVC in a Row
             Row(
               children: [
+                // Expiry Date Field
                 Expanded(
                   child: TextField(
                     controller: expiryDateController,
@@ -354,6 +437,8 @@ class CardFormPage extends StatelessWidget {
                   ),
                 ),
                 SizedBox(width: 16),
+
+                // CVC Field
                 Expanded(
                   child: TextField(
                     controller: cvcController,
@@ -367,14 +452,26 @@ class CardFormPage extends StatelessWidget {
                 ),
               ],
             ),
-            Spacer(),
+            // Spacer(),
+            SizedBox(height: 30),
+
+            // Save Button
             Center(
               child: ElevatedButton(
                 onPressed: () {
-                  // Save card details logic
+                  // Logic for saving the card details
                   Navigator.pop(context);
                 },
-                child: Text('Save'),
+                style: ElevatedButton.styleFrom(
+                  minimumSize: Size(double.infinity, 50),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: Text(
+                  'Save',
+                  style: TextStyle(fontSize: 18),
+                ),
               ),
             ),
           ],
@@ -384,39 +481,231 @@ class CardFormPage extends StatelessWidget {
   }
 }
 
+// class ReceiptPage extends StatelessWidget {
+//   final String productName;
+//   final double productPrice;
+//   final String paymentMethod;
+
+//   ReceiptPage({
+//     required this.productName,
+//     required this.productPrice,
+//     required this.paymentMethod,
+//   });
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return Scaffold(
+//       appBar: AppBar(title: Text('Payment Receipt')),
+//       body: Center(
+//         child: Column(
+//           mainAxisAlignment: MainAxisAlignment.center,
+//           children: [
+//             Icon(Icons.check_circle, color: Colors.green, size: 72),
+//             SizedBox(height: 16),
+//             Text('Payment Successful!', style: TextStyle(fontSize: 24)),
+//             SizedBox(height: 16),
+//             Text('Product: $productName'),
+//             Text('Price: \$${productPrice.toStringAsFixed(2)}'),
+//             Text('Payment Method: $paymentMethod'),
+//             SizedBox(height: 16),
+//             ElevatedButton(
+//               onPressed: () {
+//                 Navigator.popUntil(context, (route) => route.isFirst);
+//               },
+//               child: Text('Back to Home'),
+//             ),
+//           ],
+//         ),
+//       ),
+//     );
+//   }
+// }
+
 class ReceiptPage extends StatelessWidget {
   final String productName;
   final double productPrice;
+  final String productImage;
   final String paymentMethod;
 
   ReceiptPage({
     required this.productName,
     required this.productPrice,
+    required this.productImage,
     required this.paymentMethod,
   });
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Payment Receipt')),
-      body: Center(
+      backgroundColor: Colors.blueGrey[50],
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.check_circle, color: Colors.green, size: 72),
+            SizedBox(height: 50),
+
+            // Success Icon and Title
+            Icon(
+              Icons.check_circle,
+              color: Colors.green,
+              size: 80,
+            ),
             SizedBox(height: 16),
-            Text('Payment Successful!', style: TextStyle(fontSize: 24)),
+            Text(
+              'Your payment was successful',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: Colors.green,
+              ),
+            ),
+            SizedBox(height: 8),
+            Text(
+              'You purchased:',
+              style: TextStyle(fontSize: 16, color: Colors.grey[700]),
+            ),
+            SizedBox(height: 8),
+
+            // Product Image and Name
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8.0),
+                  child: Image.network(
+                    productImage,
+                    width: 80,
+                    height: 80,
+                    fit: BoxFit.cover,
+                  ),
+                ),
+                SizedBox(width: 16),
+                Text(
+                  productName,
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black,
+                  ),
+                ),
+              ],
+            ),
+
+            SizedBox(height: 24),
+
+            // Receipt Card
+            Expanded(
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black12,
+                      blurRadius: 8,
+                      offset: Offset(0, 4),
+                    ),
+                  ],
+                ),
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Slip Number and Date
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Slip Number',
+                          style: TextStyle(fontSize: 14, color: Colors.grey),
+                        ),
+                        Text(
+                          'Date and Time',
+                          style: TextStyle(fontSize: 14, color: Colors.grey),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 4),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          '9uuzn20250119090730718', // Example slip number
+                          style: TextStyle(fontSize: 14, color: Colors.black),
+                        ),
+                        Text(
+                          '19/01/2025 09:07', // Example date
+                          style: TextStyle(fontSize: 14, color: Colors.black),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 16),
+
+                    Divider(color: Colors.grey[300]),
+
+                    // Paid Through
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Paid Through',
+                          style: TextStyle(fontSize: 16, color: Colors.black),
+                        ),
+                        Text(
+                          paymentMethod,
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.black,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 8),
+
+                    // Payment Amount
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Payment Amount',
+                          style: TextStyle(fontSize: 16, color: Colors.black),
+                        ),
+                        Text(
+                          '\$${productPrice.toStringAsFixed(2)}',
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.red,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
             SizedBox(height: 16),
-            Text('Product: $productName'),
-            Text('Price: \$${productPrice.toStringAsFixed(2)}'),
-            Text('Payment Method: $paymentMethod'),
-            SizedBox(height: 16),
+
+            // Successful Button
             ElevatedButton(
               onPressed: () {
                 Navigator.popUntil(context, (route) => route.isFirst);
               },
-              child: Text('Back to Home'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blue, // Change button color to blue
+                minimumSize: Size(double.infinity, 50),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(30),
+                ),
+              ),
+              child: Text(
+                'Successful',
+                style: TextStyle(fontSize: 18, color: Colors.white),
+              ),
             ),
+            SizedBox(height: 20),
           ],
         ),
       ),
