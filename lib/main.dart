@@ -21,19 +21,19 @@ class ProductListPage extends StatelessWidget {
       'name': 'Product 1',
       'price': 100.0,
       'image':
-          'https://images.pexels.com/photos/90946/pexels-photo-90946.jpeg?cs=srgb&dl=pexels-madebymath-90946.jpg&fm=jpg'
+          'https://images.unsplash.com/photo-1523275335684-37898b6baf30?fm=jpg&q=60&w=3000&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8cHJvZHVjdHxlbnwwfHwwfHx8MA%3D%3D'
     },
     {
       'name': 'Product 2',
       'price': 200.0,
       'image':
-          'https://images.unsplash.com/photo-1523275335684-37898b6baf30?fm=jpg&q=60&w=3000&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8cHJvZHVjdHxlbnwwfHwwfHx8MA%3D%3D'
+          'https://img.freepik.com/fotos-premium/renderizacao-3d-de-oculos-vr-isolados-no-branco_461160-6753.jpg'
     },
     {
       'name': 'Product 3',
       'price': 300.0,
       'image':
-          'https://img.freepik.com/fotos-premium/renderizacao-3d-de-oculos-vr-isolados-no-branco_461160-6753.jpg'
+          'https://images.pexels.com/photos/90946/pexels-photo-90946.jpeg?cs=srgb&dl=pexels-madebymath-90946.jpg&fm=jpg'
     },
   ];
 
@@ -107,6 +107,7 @@ class _PaymentPageState extends State<PaymentPage> {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Top product details
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: Text(
@@ -115,32 +116,63 @@ class _PaymentPageState extends State<PaymentPage> {
             ),
           ),
           Divider(),
-          ListTile(
-            title: Text('Pay by Card'),
-            leading: Radio<String>(
-              value: 'card',
-              groupValue: selectedPaymentMethod,
-              onChanged: (value) {
-                setState(() {
-                  selectedPaymentMethod = value;
-                });
-              },
+
+          // Payment methods UI
+          Expanded(
+            child: ListView(
+              children: [
+                _buildPaymentOptionCard(
+                  title: 'พร้อมเพย์ (PromptPay)',
+                  subtitle: 'No Fees',
+                  icon: Image.asset(
+                    'assets/images/promptpay.png', // Replace with your PromptPay asset
+                    width: 40,
+                    height: 40,
+                  ),
+                  isSelected: selectedPaymentMethod == 'promptpay',
+                  onTap: () {
+                    setState(() {
+                      selectedPaymentMethod = 'promptpay';
+                    });
+                  },
+                ),
+                // _buildPaymentOptionCard(
+                //   title: 'Pay with Points',
+                //   subtitle: '84,600',
+                //   icon: Icon(Icons.flash_on, color: Colors.orange, size: 40),
+                //   isSelected: selectedPaymentMethod == 'points',
+                //   onTap: () {
+                //     setState(() {
+                //       selectedPaymentMethod = 'points';
+                //     });
+                //   },
+                // ),
+                _buildPaymentOptionCard(
+                  title: 'Credit card / Debit',
+                  subtitle: 'No Fees',
+                  icon: Image.asset(
+                    'assets/icons/group_cradit_cardpng.png', // Replace with your Credit card asset
+                    width: 40,
+                    height: 40,
+                  ),
+                  isSelected: selectedPaymentMethod == 'card',
+                  onTap: () {
+                    setState(() {
+                      selectedPaymentMethod = 'card';
+                    });
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => AddCardPage()),
+                    );
+                  },
+                ),
+              ],
             ),
           ),
-          ListTile(
-            title: Text('Pay by PromptPay'),
-            leading: Radio<String>(
-              value: 'promptpay',
-              groupValue: selectedPaymentMethod,
-              onChanged: (value) {
-                setState(() {
-                  selectedPaymentMethod = value;
-                });
-              },
-            ),
-          ),
-          Spacer(),
-          Center(
+
+          // Proceed to pay button
+          Padding(
+            padding: const EdgeInsets.all(16.0),
             child: ElevatedButton(
               onPressed: selectedPaymentMethod == null
                   ? null
@@ -157,10 +189,196 @@ class _PaymentPageState extends State<PaymentPage> {
                       );
                     },
               child: Text('Proceed to Pay'),
+              style: ElevatedButton.styleFrom(
+                minimumSize: Size(double.infinity, 50),
+                textStyle: TextStyle(fontSize: 18),
+              ),
             ),
           ),
-          SizedBox(height: 30)
         ],
+      ),
+    );
+  }
+
+  // Helper method to build the payment option card
+  Widget _buildPaymentOptionCard({
+    required String title,
+    required String subtitle,
+    required Widget icon,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Card(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+          side: BorderSide(
+            color: isSelected ? Colors.blue : Colors.grey[300]!,
+            width: 2,
+          ),
+        ),
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Row(
+            children: [
+              icon,
+              SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      subtitle,
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (isSelected)
+                Icon(Icons.check_circle, color: Colors.blue, size: 24),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class AddCardPage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Saved Payment Methods'),
+        actions: [
+          // "Add Card" button in the top-right corner
+          TextButton(
+            onPressed: () {
+              // Add your card adding logic here
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => CardFormPage()),
+              );
+            },
+            child: Text(
+              '+ Add Card',
+              style: TextStyle(color: Colors.blue, fontSize: 16),
+            ),
+          ),
+        ],
+      ),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // Placeholder image
+            Image.asset(
+              'assets/images/no_data.png', // Replace with your asset
+              width: 150,
+              height: 150,
+            ),
+            SizedBox(height: 16),
+            // Placeholder text
+            Text(
+              'ขณะนี้คุณยังไม่มีข้อมูล...',
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.grey[600],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class CardFormPage extends StatelessWidget {
+  final TextEditingController nameController = TextEditingController();
+  final TextEditingController cardNumberController = TextEditingController();
+  final TextEditingController expiryDateController = TextEditingController();
+  final TextEditingController cvcController = TextEditingController();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text('Add Card')),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            TextField(
+              controller: nameController,
+              decoration: InputDecoration(
+                labelText: 'Cardholder Name',
+                hintText: 'Enter Cardholder Name',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            SizedBox(height: 16),
+            TextField(
+              controller: cardNumberController,
+              decoration: InputDecoration(
+                labelText: 'Card Number',
+                hintText: 'Enter Card Number',
+                border: OutlineInputBorder(),
+              ),
+              keyboardType: TextInputType.number,
+            ),
+            SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: expiryDateController,
+                    decoration: InputDecoration(
+                      labelText: 'Expiry Date',
+                      hintText: 'MM / YY',
+                      border: OutlineInputBorder(),
+                    ),
+                    keyboardType: TextInputType.datetime,
+                  ),
+                ),
+                SizedBox(width: 16),
+                Expanded(
+                  child: TextField(
+                    controller: cvcController,
+                    decoration: InputDecoration(
+                      labelText: 'CVC',
+                      hintText: 'CVV / CVC',
+                      border: OutlineInputBorder(),
+                    ),
+                    keyboardType: TextInputType.number,
+                  ),
+                ),
+              ],
+            ),
+            Spacer(),
+            Center(
+              child: ElevatedButton(
+                onPressed: () {
+                  // Save card details logic
+                  Navigator.pop(context);
+                },
+                child: Text('Save'),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -171,56 +389,33 @@ class ReceiptPage extends StatelessWidget {
   final double productPrice;
   final String paymentMethod;
 
-  ReceiptPage(
-      {required this.productName,
-      required this.productPrice,
-      required this.paymentMethod});
+  ReceiptPage({
+    required this.productName,
+    required this.productPrice,
+    required this.paymentMethod,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: Text('Payment Receipt')),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
+      body: Center(
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Center(
-              child: Column(
-                children: [
-                  Icon(Icons.check_circle, color: Colors.green, size: 72),
-                  SizedBox(height: 16),
-                  Text(
-                    'Payment Successful!',
-                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                  ),
-                ],
-              ),
-            ),
-            SizedBox(height: 32),
-            Text('Order Summary', style: TextStyle(fontSize: 18)),
-            Divider(),
-            ListTile(
-              title: Text('Product'),
-              trailing: Text(productName),
-            ),
-            ListTile(
-              title: Text('Price'),
-              trailing: Text('\$${productPrice.toStringAsFixed(2)}'),
-            ),
-            ListTile(
-              title: Text('Payment Method'),
-              trailing: Text(paymentMethod),
-            ),
-            Divider(),
-            Spacer(),
-            Center(
-              child: ElevatedButton(
-                onPressed: () {
-                  Navigator.popUntil(context, (route) => route.isFirst);
-                },
-                child: Text('Back to Home'),
-              ),
+            Icon(Icons.check_circle, color: Colors.green, size: 72),
+            SizedBox(height: 16),
+            Text('Payment Successful!', style: TextStyle(fontSize: 24)),
+            SizedBox(height: 16),
+            Text('Product: $productName'),
+            Text('Price: \$${productPrice.toStringAsFixed(2)}'),
+            Text('Payment Method: $paymentMethod'),
+            SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.popUntil(context, (route) => route.isFirst);
+              },
+              child: Text('Back to Home'),
             ),
           ],
         ),
