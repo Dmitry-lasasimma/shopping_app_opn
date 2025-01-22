@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert'; // Import to use jsonEncode
 
 void main() {
   runApp(ShoppingApp());
@@ -20,19 +22,19 @@ class ProductListPage extends StatelessWidget {
   final List<Map<String, dynamic>> products = [
     {
       'name': 'Product 1',
-      'price': 100.0,
+      'price': 15000.0,
       'image':
           'https://images.unsplash.com/photo-1523275335684-37898b6baf30?fm=jpg&q=60&w=3000&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8cHJvZHVjdHxlbnwwfHwwfHx8MA%3D%3D'
     },
     {
       'name': 'Product 2',
-      'price': 200.0,
+      'price': 20000.0,
       'image':
           'https://img.freepik.com/fotos-premium/renderizacao-3d-de-oculos-vr-isolados-no-branco_461160-6753.jpg'
     },
     {
       'name': 'Product 3',
-      'price': 300.0,
+      'price': 30000.0,
       'image':
           'https://images.pexels.com/photos/90946/pexels-photo-90946.jpeg?cs=srgb&dl=pexels-madebymath-90946.jpg&fm=jpg'
     },
@@ -62,7 +64,7 @@ class ProductListPage extends StatelessWidget {
                 Expanded(
                   child: ListTile(
                     title: Text(product['name']),
-                    subtitle: Text('Price: \$${product['price']}'),
+                    subtitle: Text('Price: \฿${product['price']}'),
                     trailing: ElevatedButton(
                       onPressed: () {
                         Navigator.push(
@@ -104,7 +106,7 @@ class ProductListPage extends StatelessWidget {
 class PaymentPage extends StatefulWidget {
   final String productName;
   final double productPrice;
-  final String productImage; // Add product image
+  final String productImage;
 
   PaymentPage({
     required this.productName,
@@ -118,6 +120,64 @@ class PaymentPage extends StatefulWidget {
 
 class _PaymentPageState extends State<PaymentPage> {
   String? selectedPaymentMethod;
+  final String paymentApiUrl =
+      "http://192.168.110.3:9090/v1/api/payment-histories/omise-payment";
+  final String bearerToken =
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY3ODhhYWM3ODMyZmQyY2VjODc1M2IyZSIsInN0YXR1cyI6Ik5PVF9SRUdJU1RFUiIsInJvbGUiOiJDVVNUT01FUiIsImZ1bGxOYW1lIjoiZGltYSBsYXMiLCJpYXQiOjE3Mzc1MjcwNzksImV4cCI6MTczNzYxMzQ3OX0.e4Wucj31WZfUCxXWHjCWgb004lkAVqLUqomO_pXmmxQ";
+
+  Future<void> proceedToPay() async {
+    if (selectedPaymentMethod == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Please select a payment method!")),
+      );
+      return;
+    }
+
+    final Map<String, dynamic> requestBody = {
+      "currency": "THB",
+      "price": widget.productPrice,
+    };
+
+    try {
+      final response = await http.post(
+        Uri.parse(paymentApiUrl),
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer $bearerToken",
+        },
+        body: jsonEncode(requestBody),
+      );
+
+      if (response.statusCode == 201) {
+        // Navigate to receipt page if payment succeeds
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ReceiptPage(
+              productName: widget.productName,
+              productPrice: widget.productPrice,
+              productImage: widget.productImage,
+              paymentMethod: selectedPaymentMethod!,
+            ),
+          ),
+        );
+      } else {
+        // Show error message if payment fails
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              "Payment failed: ${response.body}",
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      // Handle connection error
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Connection error: $e")),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -156,7 +216,7 @@ class _PaymentPageState extends State<PaymentPage> {
                       ),
                       SizedBox(height: 8),
                       Text(
-                        'Price: \$${widget.productPrice}',
+                        'Price: ฿${widget.productPrice}',
                         style: TextStyle(
                           fontSize: 16,
                           color: Colors.grey[700],
@@ -197,22 +257,6 @@ class _PaymentPageState extends State<PaymentPage> {
                     width: 40,
                     height: 40,
                   ),
-                  // icon: Row(
-                  //   mainAxisSize: MainAxisSize.min,
-                  //   children: [
-                  //     Image.asset(
-                  //       'assets/icons/visa.png', // Replace with Visa asset
-                  //       width: 40,
-                  //       height: 40,
-                  //     ),
-                  //     SizedBox(width: 8),
-                  //     Image.asset(
-                  //       'assets/icons/mastercard.png', // Replace with Mastercard asset
-                  //       width: 40,
-                  //       height: 40,
-                  //     ),
-                  //   ],
-                  // ),
                   isSelected: selectedPaymentMethod == 'card',
                   onTap: () {
                     setState(() {
@@ -232,21 +276,7 @@ class _PaymentPageState extends State<PaymentPage> {
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: ElevatedButton(
-              onPressed: selectedPaymentMethod == null
-                  ? null
-                  : () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => ReceiptPage(
-                            productName: widget.productName,
-                            productPrice: widget.productPrice,
-                            productImage: widget.productImage, // Add this line
-                            paymentMethod: selectedPaymentMethod!,
-                          ),
-                        ),
-                      );
-                    },
+              onPressed: proceedToPay,
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color.fromARGB(255, 40, 155, 248),
                 foregroundColor: Colors.white, // Set text color to white
@@ -326,12 +356,96 @@ class _PaymentPageState extends State<PaymentPage> {
   }
 }
 
-class AddCardPage extends StatelessWidget {
+class AddCardPage extends StatefulWidget {
+  @override
+  _AddCardPageState createState() => _AddCardPageState();
+}
+
+class _AddCardPageState extends State<AddCardPage> {
+  final String apiUrl = "http://192.168.110.3:9090/v1/api/cards/";
+  final String bearerToken =
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY3ODhhYWM3ODMyZmQyY2VjODc1M2IyZSIsInN0YXR1cyI6Ik5PVF9SRUdJU1RFUiIsInJvbGUiOiJDVVNUT01FUiIsImZ1bGxOYW1lIjoiZGltYSBsYXMiLCJpYXQiOjE3Mzc1MjcwNzksImV4cCI6MTczNzYxMzQ3OX0.e4Wucj31WZfUCxXWHjCWgb004lkAVqLUqomO_pXmmxQ";
+
+  List<Map<String, dynamic>> cards = [];
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    fetchCards();
+  }
+
+  // Fetch cards from the API
+  Future<void> fetchCards() async {
+    try {
+      final response = await http.get(
+        Uri.parse(apiUrl),
+        headers: {
+          "Authorization": "Bearer $bearerToken",
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final responseData = json.decode(response.body);
+        final data = responseData['data'] as List;
+
+        setState(() {
+          cards = data
+              .map((card) => {
+                    'id': card['id'],
+                    'cardName': card['cardName'],
+                    'cardLastDigit': card['cardLastDigit'],
+                    'brand': card['brand'],
+                    'expireMonth': card['expireMonth'],
+                    'expireYear': card['expireYear'],
+                    'defaultCard': card['defaultCard'],
+                  })
+              .toList();
+          isLoading = false;
+        });
+      } else {
+        setState(() {
+          isLoading = false;
+        });
+        print("Failed to fetch cards: ${response.statusCode}");
+      }
+    } catch (e) {
+      setState(() {
+        isLoading = false;
+      });
+      print("Error fetching cards: $e");
+    }
+  }
+
+  // Set a card as the default card
+  Future<void> setDefaultCard(String cardId) async {
+    final String url = "$apiUrl/default-card/$cardId";
+
+    try {
+      final response = await http.put(
+        Uri.parse(url),
+        headers: {
+          "Authorization": "Bearer $bearerToken",
+        },
+      );
+
+      if (response.statusCode == 200) {
+        print("=======Successfully set default card");
+        // Refresh the card list to show updated default card
+        fetchCards();
+      } else {
+        print("Failed to set default card: ${response.statusCode}");
+      }
+    } catch (e) {
+      print("Error setting default card: $e");
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Saved Payment Methods'),
+        title: Text('Credit Card Account'),
         actions: [
           TextButton(
             onPressed: () {
@@ -347,26 +461,134 @@ class AddCardPage extends StatelessWidget {
           ),
         ],
       ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Image.asset(
-              'assets/images/no_data.png', // Replace with your asset
-              width: 150,
-              height: 150,
-            ),
-            SizedBox(height: 16),
-            Text(
-              'You currently have no information...',
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.grey[600],
-              ),
-            ),
-          ],
-        ),
-      ),
+      body: isLoading
+          ? Center(child: CircularProgressIndicator())
+          : cards.isEmpty
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Image.asset(
+                        'assets/images/no_data.png',
+                        width: 150,
+                        height: 150,
+                      ),
+                      SizedBox(height: 16),
+                      Text(
+                        'You currently have no saved cards...',
+                        style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+                      ),
+                    ],
+                  ),
+                )
+              : ListView.builder(
+                  padding: const EdgeInsets.all(16.0),
+                  itemCount: cards.length,
+                  itemBuilder: (context, index) {
+                    final card = cards[index];
+                    return GestureDetector(
+                      onTap: () {
+                        // Trigger the default card update
+                        setDefaultCard(card['id']);
+                      },
+                      child: Card(
+                        margin: const EdgeInsets.only(bottom: 16.0),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          side: BorderSide(
+                            color: card['defaultCard']
+                                ? Colors.blue
+                                : Colors.grey[300]!,
+                            width: 2,
+                          ),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Image.asset(
+                                    card['brand'] == 'Visa'
+                                        ? 'assets/icons/visa.png'
+                                        : 'assets/icons/Mastercard.png',
+                                    width: 40,
+                                    height: 40,
+                                  ),
+                                  SizedBox(width: 16),
+                                  Expanded(
+                                    child: Text(
+                                      card['cardName'],
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                  Text(
+                                    card['defaultCard'] ? 'Main account' : '',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: card['defaultCard']
+                                          ? Colors.blue
+                                          : Colors.grey,
+                                    ),
+                                  ),
+                                  if (card['defaultCard'])
+                                    Icon(Icons.radio_button_checked,
+                                        color: Colors.blue),
+                                ],
+                              ),
+                              SizedBox(height: 16),
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Card Number',
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          color: Colors.grey,
+                                        ),
+                                      ),
+                                      SizedBox(height: 4),
+                                      Text(
+                                        '**** ${card['cardLastDigit']}',
+                                        style: TextStyle(fontSize: 16),
+                                      ),
+                                    ],
+                                  ),
+                                  Column(
+                                    crossAxisAlignment: CrossAxisAlignment.end,
+                                    children: [
+                                      Text(
+                                        'Expiry Date',
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          color: Colors.grey,
+                                        ),
+                                      ),
+                                      SizedBox(height: 4),
+                                      Text(
+                                        '${card['expireMonth']}/${card['expireYear']}',
+                                        style: TextStyle(fontSize: 16),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
     );
   }
 }
@@ -374,8 +596,83 @@ class AddCardPage extends StatelessWidget {
 class CardFormPage extends StatelessWidget {
   final TextEditingController nameController = TextEditingController();
   final TextEditingController cardNumberController = TextEditingController();
-  final TextEditingController expiryDateController = TextEditingController();
+  final TextEditingController expiryMonthController = TextEditingController();
+  final TextEditingController expiryYearController = TextEditingController();
   final TextEditingController cvcController = TextEditingController();
+
+  Future<void> addCard(BuildContext context) async {
+    final String url = "http://192.168.110.3:9090/v1/api/cards/create-customer";
+    final Map<String, String> headers = {
+      "Content-Type": "application/json",
+      "Authorization":
+          "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY3ODhhYWM3ODMyZmQyY2VjODc1M2IyZSIsInN0YXR1cyI6Ik5PVF9SRUdJU1RFUiIsInJvbGUiOiJDVVNUT01FUiIsImZ1bGxOYW1lIjoiZGltYSBsYXMiLCJpYXQiOjE3Mzc1MjcwNzksImV4cCI6MTczNzYxMzQ3OX0.e4Wucj31WZfUCxXWHjCWgb004lkAVqLUqomO_pXmmxQ"
+    };
+
+    final Map<String, dynamic> body = {
+      "cardName": nameController.text,
+      "cardNumber": cardNumberController.text,
+      "cardSecurityCode": cvcController.text,
+      "cardExpirationMonth": expiryMonthController.text,
+      "cardExpirationYear": expiryYearController.text,
+    };
+
+    try {
+      final response = await http.post(
+        Uri.parse(url),
+        headers: headers,
+        body: jsonEncode(body), // Serialize the body using jsonEncode
+      );
+
+      if (response.statusCode == 201) {
+        showDialog(
+          context: context,
+          builder: (_) => AlertDialog(
+            title: Text("Success"),
+            content: Text("Card added successfully!"),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context); // Close dialog
+                  Navigator.pop(context); // Go back to the previous screen
+                },
+                child: Text("OK"),
+              ),
+            ],
+          ),
+        );
+      } else {
+        // Show error message for failed request
+        showDialog(
+          context: context,
+          builder: (_) => AlertDialog(
+            title: Text("Error"),
+            content: Text("Failed to add card: ${response.body}"),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text("OK"),
+              ),
+            ],
+          ),
+        );
+      }
+    } catch (e) {
+      // Handle connection errors
+      showDialog(
+        context: context,
+        builder: (_) => AlertDialog(
+          title: Text("Error"),
+          content: Text("Connection error: $e"),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text("OK"),
+            ),
+          ],
+        ),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -393,58 +690,48 @@ class CardFormPage extends StatelessWidget {
               controller: nameController,
               decoration: InputDecoration(
                 labelText: 'Cardholder Name',
-                hintText: 'Cardholder Name',
+                hintText: 'Enter Cardholder Name',
                 border: OutlineInputBorder(),
               ),
             ),
             SizedBox(height: 16),
 
-            // Card Number with Visa/Mastercard icons
+            // Card Number
             TextField(
               controller: cardNumberController,
               decoration: InputDecoration(
                 labelText: 'Card Number',
-                hintText: 'Card Number',
+                hintText: 'Enter Card Number',
                 border: OutlineInputBorder(),
-                suffixIcon: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Image.asset(
-                      'assets/images/card_debit.png', // Replace with PromptPay asset
-                      width: 40,
-                      height: 40,
-                    ),
-                  ],
-                ),
               ),
               keyboardType: TextInputType.number,
             ),
             SizedBox(height: 16),
 
-            // Expiry Date and CVC in a Row
+            // Expiry Date and CVC
             Row(
               children: [
-                // Expiry Date Field
+                // Expiry Month
                 Expanded(
                   child: TextField(
-                    controller: expiryDateController,
+                    controller: expiryMonthController,
                     decoration: InputDecoration(
-                      labelText: 'Expiry Date',
-                      hintText: 'MM / YY',
+                      labelText: 'Expiry Month',
+                      hintText: 'MM',
                       border: OutlineInputBorder(),
                     ),
-                    keyboardType: TextInputType.datetime,
+                    keyboardType: TextInputType.number,
                   ),
                 ),
                 SizedBox(width: 16),
 
-                // CVC Field
+                // Expiry Year
                 Expanded(
                   child: TextField(
-                    controller: cvcController,
+                    controller: expiryYearController,
                     decoration: InputDecoration(
-                      labelText: 'CVC',
-                      hintText: 'CVV / CVC',
+                      labelText: 'Expiry Year',
+                      hintText: 'YYYY',
                       border: OutlineInputBorder(),
                     ),
                     keyboardType: TextInputType.number,
@@ -452,15 +739,25 @@ class CardFormPage extends StatelessWidget {
                 ),
               ],
             ),
-            // Spacer(),
+            SizedBox(height: 16),
+
+            // CVC
+            TextField(
+              controller: cvcController,
+              decoration: InputDecoration(
+                labelText: 'CVC',
+                hintText: 'Enter CVC',
+                border: OutlineInputBorder(),
+              ),
+              keyboardType: TextInputType.number,
+            ),
             SizedBox(height: 30),
 
             // Save Button
             Center(
               child: ElevatedButton(
                 onPressed: () {
-                  // Logic for saving the card details
-                  Navigator.pop(context);
+                  addCard(context);
                 },
                 style: ElevatedButton.styleFrom(
                   minimumSize: Size(double.infinity, 50),
@@ -480,46 +777,6 @@ class CardFormPage extends StatelessWidget {
     );
   }
 }
-
-// class ReceiptPage extends StatelessWidget {
-//   final String productName;
-//   final double productPrice;
-//   final String paymentMethod;
-
-//   ReceiptPage({
-//     required this.productName,
-//     required this.productPrice,
-//     required this.paymentMethod,
-//   });
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       appBar: AppBar(title: Text('Payment Receipt')),
-//       body: Center(
-//         child: Column(
-//           mainAxisAlignment: MainAxisAlignment.center,
-//           children: [
-//             Icon(Icons.check_circle, color: Colors.green, size: 72),
-//             SizedBox(height: 16),
-//             Text('Payment Successful!', style: TextStyle(fontSize: 24)),
-//             SizedBox(height: 16),
-//             Text('Product: $productName'),
-//             Text('Price: \$${productPrice.toStringAsFixed(2)}'),
-//             Text('Payment Method: $paymentMethod'),
-//             SizedBox(height: 16),
-//             ElevatedButton(
-//               onPressed: () {
-//                 Navigator.popUntil(context, (route) => route.isFirst);
-//               },
-//               child: Text('Back to Home'),
-//             ),
-//           ],
-//         ),
-//       ),
-//     );
-//   }
-// }
 
 class ReceiptPage extends StatelessWidget {
   final String productName;
